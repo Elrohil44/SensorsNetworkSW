@@ -17,9 +17,9 @@
 
 #define LED_PIN 6 // Pin where LED is connected
 #define LED_ID 254
-#define ONE_WIRE_BUS 2 // Pin where dallase sensor is connected
+#define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected
 
-#define BUTTON_PIN 3
+#define BUTTON_PIN 2
 #define BUTTON_ID 4
 #define MAX_ATTACHED_DS18B20 16
 
@@ -59,7 +59,7 @@ void setup()
   // After setting up the button, setup debouncer
   debouncer.attach(BUTTON_PIN);
   debouncer.interval(5);
-  
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), motion_detected, CHANGE);
   pinMode(LED_PIN, OUTPUT);    
 }
 
@@ -93,10 +93,10 @@ void loop()
   wait(conversionTime);
 
   bool button_state = digitalRead(BUTTON_PIN) == HIGH;
-  send(msg_button.set(button_state?"1":"0"));  // Send button_state value to gw
+  send(msg_button.set(button_state?"0":"1"));  // Send button_state value to gw
   
   bool led_state = digitalRead(LED_PIN) == HIGH;
-  send(msg_led.set(led_state?"1":"0");
+  send(msg_led.set(led_state?"1":"0"));
 
   // Read temperatures and send them to controller 
   for (int i=0; i<numSensors && i<MAX_ATTACHED_DS18B20; i++) {
@@ -114,14 +114,18 @@ void loop()
       lastTemperature[i]=temperature;
     }
   }
-  wait(SLEEP_TIME, C_SET, V_STATUS)
+  wait(SLEEP_TIME, C_SET, V_STATUS);
 }
 
 void receive(const MyMessage &message){
-  if (message.type == V_STATUS) {
+  if (message.type == V_STATUS && message.sensor == LED_ID) {
+    Serial.println("Message received!");
     digitalWrite(LED_PIN, message.getBool() ? HIGH : LOW);
     saveState(message.sensor, message.getBool());
   }
 }
 
+void motion_detected(){
+  loop();
+}
 
